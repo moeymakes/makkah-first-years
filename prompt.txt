@@ -1,0 +1,29 @@
+Build a real-time, realistic-but-painterly artistic reconstruction of Makkah in the Prophet's time (peace be upon
+him), after the conquest (630-632 CE), that runs in the browser. It only needs to look beautiful and let me walk
+(and, with a key, fly) through it.
+
+PRIORITIES: 1 visual quality, 2 stable frame pacing at the target spec, 3 small bundle size.
+
+CONSTRAINTS
+- No engines; WebGPU; everything procedural; one self-contained index.html; zero per-frame JS allocations.
+- After the conquest: no idols anywhere. Nothing anachronistic: no minarets, domes, mosque walls or modern materials.
+- Sacred site: no human figures, no depiction of the Prophet, his family, the Companions or any person; no animals
+  suggesting a scene with people (a few birds are fine). No interiors (never inside the Kaaba). No synthesized adhan,
+  talbiyah or Qur'an recitation; no scripture or other text anywhere.
+- Research what is reasonably known, cite sources in NOTES.md, and mark every uncertain detail as an informed
+  artistic guess. The README says plainly it is an artistic reconstruction, not an exact one.
+
+TARGET: RTX 3070, Chrome 157, 2560x1440, GPU frame <= 11 ms average during a scripted 60 s fly-through.
+
+SCENE
+- The narrow valley of Makkah between bare mountains (Abu Qubays and others)
+- The Kaaba as rebuilt by Quraysh (about 605 CE): shorter on the Hijr side, a Kiswah of plain dark cloth, no
+  surrounding mosque, an open space around it
+- The well of Zamzam as a simple well; the low hills of Safa and Marwa with the open way between them
+- Houses of stone and mud brick with flat roofs crowding the valley, simple paths, few trees
+- Time: Dawn (default), Golden hour, Night (moonlight, stars, a few warm lamp or fire glows from doorways only)
+
+CONTROLS: WASD walk with gravity, mouse look or drag, Shift run, F flight (E lifts off, Q lands).
+
+VERIFICATION: an images-only critic subagent on 6 poses at 2560x1440 plus flight frames, until nothing above minor
+or 5 iterations; GPU timestamps over the scripted flight.

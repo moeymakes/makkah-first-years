@@ -304,7 +304,7 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   {
     const k = KAABA, [ux, uz] = kRot(1, 0), [vx, vz] = kRot(0, 1);
     const [dx, dz] = kRot(-2.3, k.hz + .06);
-    obox(M.open, dx + vx * .02, dz + vz * .02, ux, uz, .95, .03, ky + 2.0, ky + 5.0);
+    obox(M.dark, dx + vx * .02, dz + vz * .02, ux, uz, .95, .03, ky + 2.0, ky + 5.0);
     obox(M.wood, dx + vx * .05, dz + vz * .05, ux, uz, .75, .05, ky + 2.1, ky + 4.85);
     obox(M.wood, dx + vx * .1, dz + vz * .1, ux, uz, 1.05, .12, ky + 1.85, ky + 2.05);
     const [sx, sz] = kRot(k.hx + .6, 0);
