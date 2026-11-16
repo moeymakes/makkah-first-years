@@ -332,7 +332,7 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   rseed(5);
   for (let gz = OZ + 6; gz < -OZ - 6; gz += 10.5) for (let gx = OX + 6; gx < -OX - 6; gx += 10.5) {
     const x = gx + rr(-2.5, 2.5), z = gz + rr(-2.5, 2.5), r = hypot(x, z), t = nearX(NB, x, z, 0) * (1 - sstep(30, 18, hypot(x - SAFA[0], z - SAFA[1])));
-    if (t < .25 || rnd() > t * 1.3 || r < 44 || laneDist(x, z) < 1.8 + r * .004 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
+    if (t < .25 || rnd() > t * 1.3 || r < 54 || laneDist(x, z) < 1.8 + r * .004 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
     const wob = 4 * sin(atan2(z, x) * 5);
     const w = rr(6.5, 11), d = rr(6, 9.5), two = rnd() < (r < 90 ? .45 : .2), h = two ? rr(5.6, 6.4) : rr(3, 3.6);
     if (laneDist(x, z) < max(w, d) * .6 + 1.2) continue;
@@ -388,12 +388,12 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   // --- the rest of the town over the valley floors, thinning out; Jabal al-Nour stands far to the north-east
   rseed(6);
   for (let gz = -1800; gz < 1800; gz += 12) for (let gx = -1800; gx < 1800; gx += 12) {
-    if (gx % 84 === 0 || gz % 96 === 0) continue;
-    const x = gx + rr(-1.5, 1.5), z = gz + rr(-1.5, 1.5);
+    const x = gx + rr(-4, 4), z = gz + rr(-4, 4);
+    if (fbm(x * .02, 3, z * .02, 2) < .38) continue;
     if (max(abs(x), abs(z)) < -OX + 6) continue;
     const t = townAt(x, z); if (t < .2 || rnd() > t * .5) continue;
     const k = (rnd() * FHOUSE.length) | 0, y = min(fh(x - 5, z - 5), fh(x + 5, z - 5), fh(x - 5, z + 5), fh(x + 5, z + 5)) - .3;
-    solid(19 + k, x, y, z, rr(.85, 1.1), yawQ((rnd() < .5 ? 0 : PI / 2) + rr(-.06, .06)), 17, rnd(), litC(x, z), 0);
+    solid(19 + k, x, y, z, rr(.8, 1.15), yawQ((rnd() < .5 ? 0 : PI / 2) + rr(-.15, .15)), 17, rnd(), litC(x, z), 0);
     if (rnd() < .06) lamps.push(x + rr(-4, 4), y + 1.2, z + rr(-4, 4), rnd());
   }
 

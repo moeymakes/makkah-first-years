@@ -159,7 +159,7 @@ fn jabal(q: vec2f) -> f32 {
   // the open ground: a level space round the Kaaba and the way between Safa and Marwa
   let mataf = ss(34., 26., rk);
   h = mix(h, 0., ss(70., 26., rk));
-  let masa = ss(14., 9., segD(p, SAFA, MARWA)) * (1. - ss(34., 18., ds)) * (1. - ss(30., 16., dm));
+  let masa = ss(20., 13., segD(p, SAFA, MARWA)) * (1. - ss(34., 18., ds)) * (1. - ss(30., 16., dm));
   let rock = max(ss(5., 20., rise), max(ss(26., 14., ds), ss(22., 12., dm))) * (1. - mataf);
   let town = ss(.3, .7, val) * ss(30., 42., rk) * ss(1700., 900., rk) * ss(16., 6., rise) * (1. - masa) * (1. - ss(22., 12., ds)) * (1. - ss(18., 9., dm));
   let sand = ss(.45, .7, fbm(vec3f(p * .015, 12.), 3)) * (1. - rock);
@@ -417,14 +417,14 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     // granite slopes, the sandy valley floor, trodden earth between the houses, pale sand on the open ground
     let rock = mix(fm.r, nm.g, nk); let sand = mix(fm.g, nm.r, nk); let town = mix(fm.b, nm.a, nk); let open = mix(fm.a, nm.b, nk);
     alb = granite(A, B, C, Lg, flt, 0.) * select(1., mix(.78, 1., ss(3000., 9000., dist)), far);
-    alb *= .86 + .24 * ss(.3, .7, fract(i.wp.y / 7.3 + A.h * 1.6 + Lg.a * 2.));
+    alb *= .9 + .2 * Lg.b;
     let earth = mix(vec3f(.40, .31, .22), vec3f(.48, .38, .27), ss(.35, .7, Lg.a + .2 * B.c)) * (.85 + .25 * B.h) * (.9 + .15 * C.c);
     alb = mix(alb, earth, 1. - rock);
     alb = mix(alb, vec3f(.50, .40, .28) * (.88 + .2 * B.h), sand * (1. - rock) * .5 * select(1., .5, far && dist > 1500.));
     alb = mix(alb, vec3f(.40, .31, .22) * (.85 + .25 * C.h), town * (1. - rock) * .5);
     alb = mix(alb, vec3f(.50, .40, .29) * (.92 + .12 * B.h), open * .7);
     alb *= mix(1., .6 + .8 * F.h, fk);
-    bump = select(1.3, mix(.6, .3, ss(800., 4000., dist)), far) * mix(1., .04, (1. - rock)); gloss = .04;
+    bump = select(1.3, mix(.45, .15, ss(300., 1500., dist)), far) * mix(1., .04, (1. - rock)); gloss = .04;
   } else if (mat == 2 || mat == 3) {
     alb = granite(A, B, C, Lg, flt, select(-.05, .12, mat == 3)) * (.75 + .5 * hs(sd * 7.));
     bump = 1.5; gloss = .05;
@@ -447,9 +447,10 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     let srow = floor(fv / (.2 + .1 * hs(floor(fu / 2.3)))); let sx = fu / (.25 + .35 * hs(srow * 3.7)) + hs(srow) * 7.;
     let sv = .8 + .4 * hs(floor(sx) * 3.3 + srow * 1.9);
     let stn0 = select(mix(vec3f(.14, .115, .10), vec3f(.28, .23, .19), hs(floor(sx) * 1.3 + srow * 17.)), mix(vec3f(.22, .19, .16), vec3f(.30, .26, .22), hs(floor(sx) * 1.3 + srow * 17.)), mat == 12) * (.75 + .45 * F.h) * (.85 + .3 * C.h);
-    let stn = stn0 * sv * (.8 + .4 * B.h);
+    let plast = ss(.55, .72, C.c + .35 * A.h) * f32(mat == 6) * .75;
+    let stn = mix(stn0 * sv * (.8 + .4 * B.h), vec3f(.46, .36, .26) * (.85 + .25 * B.h), plast);
     let sj = (1. - ss(.0, .1, fract(sx)) * ss(1., .9, fract(sx))) + (1. - ss(.0, .14, fract(fv / .25)) * ss(1., .86, fract(fv / .25)));
-    alb = mix(stn, select(vec3f(.26, .21, .16), vec3f(.30, .26, .21), mat == 12), sat(sj) * .6 * wfade);
+    alb = mix(stn, select(vec3f(.26, .21, .16), vec3f(.30, .26, .21), mat == 12), sat(sj) * .6 * wfade * (1. - plast));
     alb = mix(alb, vec3f(.40, .32, .24) * (.85 + .25 * B.h), ss(.6, .9, on.y) * select(.7, .2, mat == 12));
     bump = mix(.4, .05, ss(.6, .9, on.y));
   } else if (mat == 9) {
@@ -463,14 +464,14 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
   } else if (mat == 13) {
     // the Kaaba: plain dark cloth hanging in soft folds over a base course of stone
     let base = 1. - ss(.62, .7, fv);
-    let fold = .9 + .1 * sin(fu * 2.1 + 3. * fbmT(fu, fv) + sin(fu * .7) * 2.) * wfade;
+    let fold = .84 + .16 * sin(fu * 2.1 + 3. * fbmT(fu, fv) + sin(fu * .7) * 2.) * wfade;
     let hem = ss(.68, .74, fv) * ss(1.08, 1., fv);
-    let cloth = vec3f(.026, .024, .025) * fold * (.94 + .12 * B.h) * (1. + .6 * hem);
+    let cloth = vec3f(.032, .029, .028) * fold * (.94 + .12 * B.h) * (1. + .6 * hem);
     let srow = floor(fv / .3); let sx = fu / .55 + hs(srow) * 5.;
     let stn = mix(vec3f(.24, .21, .18), vec3f(.34, .30, .25), hs(floor(sx) + srow * 7.)) * (.8 + .3 * C.h);
     alb = mix(cloth, stn, base);
     alb = mix(alb, vec3f(.30, .26, .22) * (.85 + .2 * B.h), ss(.6, .9, on.y));
-    gloss = mix(.12, .04, base); bump = mix(.05, .5, base);
+    gloss = mix(.22, .04, base); bump = mix(.08, .5, base);
   } else if (mat == 17) {
     // distant houses: stone or mud, flat roofs, a dark door
     let hh = hs(sd * 3.7);
