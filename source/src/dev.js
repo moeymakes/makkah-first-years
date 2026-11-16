@@ -42,3 +42,6 @@
 if (location.hash === '#capture') dynT = -Infinity;
 // debugging handle for headless probes (dev.html only)
 window.__w = { fh, POSES, FLY, T, far, SUN, NEAR, Wd };
+
+// test hook: read the camera state from a test script
+window.__F = F; window.__fly = () => fly;
