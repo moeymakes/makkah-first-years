@@ -35,7 +35,7 @@ fn wor(p: vec3f) -> f32 {
 // closer together than in reality (about 280 m here, about 450 m in the sources) and the ranges are compressed.
 const SAFA = [95, 105], MARWA = [150, -165], ZAMZAM = [19, 4], NOUR = [2190, -2600];
 // the valley of Makkah and its side valleys: x0, z0, x1, z1, half width of the flat floor
-const VALLEYS = [[30, -2600, 0, -300, 210], [0, -300, -40, 300, 240], [-40, 300, -380, 2600, 260], [120, -380, 2600, -900, 140],
+const VALLEYS = [[30, -2600, 0, -300, 160], [0, -300, -40, 300, 185], [-40, 300, -380, 2600, 190], [120, -380, 2600, -900, 120],
   [60, -700, 1900, -2050, 150], [-60, 500, -2600, 1300, 170], [-150, -900, -2300, -1900, 150]];
 const vlist = (a) => a.map((v) => `vec4f(${v.slice(0, 4).map((x) => x.toFixed(1)).join(',')})`).join(',');
 
@@ -132,16 +132,16 @@ fn jabal(q: vec2f) -> f32 {
   let x = u.o.x + f32(id.x) * u.o.z; let z = u.o.y + f32(id.y) * u.o.z; let p = vec2f(x, z);
   let rk = length(p);
   // the valley floor rises gently to the north, where the floods came from
-  let flo = clamp(-z * .011, -6., 30.) + max(z, 0.) * -.002 + 1.4 * (fbm(vec3f(p * .006, 1.), 2) - .5);
+  let flo = clamp(-(z + 60.) * .011, -6., 30.) * ss(40., 120., rk) + max(z, 0.) * -.002 * ss(40., 120., rk) + .6 * (fbm(vec3f(p * .006, 1.), 2) - .5);
   var vd = 1e9;
   for (var k = 0; k < ${VALLEYS.length}; k++) { let v = VAL[k]; vd = min(vd, segD(p, v.xy, v.zw) - VW[k]); }
   let wig = 60. * (fbm(vec3f(p * .003, 7.), 3) - .5);
-  let val = ss(240., 0., vd + wig);
+  let val = ss(150., 0., vd + wig);
   // bare granite ranges all round, with Abu Qubays over the Kaaba to the east and Qu'ayqi'an to the west
   let n1 = ridged(p + vec2f(1300., 400.), .0011, 5); let n2 = ridged(p + vec2f(300., 900.), .0033, 4);
   let n4 = ridged(p + vec2f(511., 97.), .024, 3);
-  var hm = 20. + 170. * pow(n1, 1.8) + 45. * (n2 - .5) + 10. * (n4 - .55) * (.3 + n1) * ss(30., 6., u.o.z) + 14. * (fbm(vec3f(p * .012, 2.), 3) - .5);
-  hm *= ss(180., 520., rk) * mix(.55, 1., ss(900., 2600., rk));
+  var hm = 25. + 190. * pow(n1, 1.6) + 55. * (n2 - .5) + 10. * (n4 - .55) * (.3 + n1) * ss(30., 6., u.o.z) + 14. * (fbm(vec3f(p * .012, 2.), 3) - .5);
+  hm *= ss(170., 420., rk) * mix(.45, 1., ss(700., 2600., rk));
   let rimR = ss(5000., 10000., rk);
   hm += rimR * (200. + 320. * pow(ridged(p + vec2f(4000., 0.), .00045, 4), 1.5));
   var h = flo + mix(hm, 1.5 * (fbm(vec3f(p * .02, 4.), 2) - .5), val * (1. - rimR));
@@ -150,7 +150,7 @@ fn jabal(q: vec2f) -> f32 {
   h = smax(h, flo + jabal(p - NOUR), 8.);
   // Safa and Marwa: low rocky rises at the foot of the mountains
   let ds = distance(p, SAFA); let dm = distance(p, MARWA);
-  h += 7.5 * pow(max(1. - ds / 30., 0.), 1.1) + 6. * pow(max(1. - dm / 26., 0.), 1.1);
+  h += 13. * pow(max(1. - ds / 34., 0.), 1.05) + 14. * pow(max(1. - dm / 32., 0.), 1.05);
   // granite block piles on the slopes (only where the grid is fine enough to hold them)
   let rise = h - flo;
   let rkm = max(ss(4., 25., rise), max(ss(30., 12., ds), ss(26., 10., dm))) * ss(8., 3., u.o.z);
@@ -158,7 +158,7 @@ fn jabal(q: vec2f) -> f32 {
   h += rkm * ((.5 - wor(wq)) * 4.5 + (fbm(vec3f(p * .3, 8.), 2) - .5) * 1.2);
   // the open ground: a level space round the Kaaba and the way between Safa and Marwa
   let mataf = ss(34., 26., rk);
-  h = mix(h, 0., mataf);
+  h = mix(h, 0., ss(70., 26., rk));
   let masa = ss(14., 9., segD(p, SAFA, MARWA)) * (1. - ss(34., 18., ds)) * (1. - ss(30., 16., dm));
   let rock = max(ss(5., 20., rise), max(ss(26., 14., ds), ss(22., 12., dm))) * (1. - mataf);
   let town = ss(.3, .7, val) * ss(30., 42., rk) * ss(1700., 900., rk) * ss(16., 6., rise) * (1. - masa) * (1. - ss(22., 12., ds)) * (1. - ss(18., 9., dm));
@@ -418,11 +418,11 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     alb = granite(A, B, C, Lg, flt, 0.) * select(1., mix(.78, 1., ss(3000., 9000., dist)), far);
     let earth = mix(vec3f(.34, .26, .19), vec3f(.44, .35, .25), ss(.35, .7, Lg.a + .2 * B.c)) * (.85 + .25 * B.h) * (.9 + .15 * C.c);
     alb = mix(alb, earth, 1. - rock);
-    alb = mix(alb, vec3f(.52, .43, .31) * (.88 + .2 * B.h), sand * (1. - rock) * .6);
+    alb = mix(alb, vec3f(.50, .40, .28) * (.88 + .2 * B.h), sand * (1. - rock) * .5 * select(1., .5, far && dist > 1500.));
     alb = mix(alb, vec3f(.30, .24, .18) * (.85 + .25 * C.h), town * (1. - rock) * .55);
     alb = mix(alb, vec3f(.55, .46, .34) * (.9 + .16 * B.h) * (.94 + .1 * C.c), open * .85);
     alb *= mix(1., .6 + .8 * F.h, fk);
-    bump = select(1.3, mix(.6, .3, ss(800., 4000., dist)), far) * mix(1., .2, (1. - rock)); gloss = .04;
+    bump = select(1.3, mix(.6, .3, ss(800., 4000., dist)), far) * mix(1., .1, (1. - rock)); gloss = .04;
   } else if (mat == 2 || mat == 3) {
     alb = granite(A, B, C, Lg, flt, select(-.05, .12, mat == 3)) * (.75 + .5 * hs(sd * 7.));
     bump = 1.5; gloss = .05;
@@ -435,7 +435,7 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     let tone = hs(sd * 13.);
     var br = mix(vec3f(.46, .33, .21), vec3f(.38, .27, .17), hs(row * 7.1 + bxi) * .7) * (.82 + .3 * C.h) * mix(.9, 1.08, tone);
     br *= 1. - .4 * mortar * wfade;
-    let rend = select(ss(.6, .72, C.c + .2 * B.h) * .2, .85 - .35 * ss(.55, .75, C.c + .3 * A.h), mat == 7);
+    let rend = select(ss(.6, .72, C.c + .2 * B.h) * .2, .8 - .5 * ss(.5, .75, C.c + .35 * A.h + .2 * F.h), mat == 7);
     alb = mix(br, mix(vec3f(.58, .45, .31), vec3f(.50, .39, .27), tone) * (.85 + .25 * B.h) * (.93 + .1 * C.c), rend);
     alb *= mix(.72, 1., ss(0., .8, fv));
     alb = mix(alb, alb * vec3f(.82, .78, .74), ss(.6, .9, on.y));
@@ -443,9 +443,9 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
   } else if (mat == 6 || mat == 12) {
     // dry-laid or mud-set walls of rough granite blocks (6), the paler dressed stone of the well (12)
     let srow = floor(fv / (.26 + .12 * hs(floor(fu / 2.3)))); let sx = fu / (.35 + .5 * hs(srow * 3.7)) + hs(srow) * 7.;
-    let stn = select(mix(vec3f(.17, .14, .12), vec3f(.33, .27, .22), hs(floor(sx) * 1.3 + srow * 17.)), mix(vec3f(.40, .36, .31), vec3f(.50, .45, .39), hs(floor(sx) * 1.3 + srow * 17.)), mat == 12) * (.75 + .45 * F.h) * (.85 + .3 * C.h);
+    let stn = select(mix(vec3f(.17, .14, .12), vec3f(.33, .27, .22), hs(floor(sx) * 1.3 + srow * 17.)), mix(vec3f(.27, .24, .20), vec3f(.36, .31, .26), hs(floor(sx) * 1.3 + srow * 17.)), mat == 12) * (.75 + .45 * F.h) * (.85 + .3 * C.h);
     let sj = (1. - ss(.0, .1, fract(sx)) * ss(1., .9, fract(sx))) + (1. - ss(.0, .14, fract(fv / .32)) * ss(1., .86, fract(fv / .32)));
-    alb = mix(stn, vec3f(.42, .33, .24), sat(sj) * .6 * wfade);
+    alb = mix(stn, select(vec3f(.26, .21, .16), vec3f(.30, .26, .21), mat == 12), sat(sj) * .6 * wfade);
     alb = mix(alb, vec3f(.40, .32, .24) * (.85 + .25 * B.h), ss(.6, .9, on.y) * select(.7, .2, mat == 12));
     bump = .4;
   } else if (mat == 9) {
@@ -459,8 +459,9 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
   } else if (mat == 13) {
     // the Kaaba: plain dark cloth hanging in soft folds over a base course of stone
     let base = 1. - ss(.62, .7, fv);
-    let fold = .85 + .15 * sin(fu * 5.3 + sin(fu * 1.7) * 1.5) * wfade;
-    let cloth = vec3f(.022, .02, .021) * fold * (.9 + .2 * B.h);
+    let fold = .82 + .18 * sin(fu * 5.3 + sin(fu * 1.7) * 1.5 + fv * .3) * wfade;
+    let hem = ss(.7, .78, fv) * ss(1.05, .95, fv);
+    let cloth = vec3f(.03, .027, .028) * fold * (.9 + .2 * B.h) * (1. - .35 * hem);
     let srow = floor(fv / .3); let sx = fu / .55 + hs(srow) * 5.;
     let stn = mix(vec3f(.24, .21, .18), vec3f(.34, .30, .25), hs(floor(sx) + srow * 7.)) * (.8 + .3 * C.h);
     alb = mix(cloth, stn, base);
@@ -563,7 +564,7 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
 }
 @fragment fn fs(i: VO) -> @location(0) vec4f {
   let n = normalize(i.n); let L = g.sun.xyz; let V = normalize(g.cam.xyz - i.wp);
-  var alb = mix(vec3f(.30, .32, .36), vec3f(.48, .49, .52), ss(-.02, .02, i.op.y));
+  var alb = mix(vec3f(.16, .16, .18), vec3f(.30, .30, .32), ss(-.02, .02, i.op.y));
   alb = mix(alb, vec3f(.12, .13, .15), ss(.7, .9, abs(i.op.x)));
   let E = SUNC * shadow1(i.wp);
   var c = alb * (E * (.2 + .8 * sat(dot(n, L))) + amb(n, 1.) * 1.2) + E * pow(sat(dot(n, normalize(V + L))), 20.) * .2;
