@@ -15,14 +15,14 @@ const NSOLID = 19 + FHOUSE.length;
 const KAABA = { yaw: 3 * PI / 4, hx: 5.1, hz: 5.8, h: 8.6 };
 // lanes radiate from the open space round the Kaaba (angles from +x toward +z)
 const LANES = [.3, 1.1, 1.9, 2.6, 3.4, 4.2, 5.0, 5.7];
-const laneDist = (x, z) => { let d = 1e9; const r = hypot(x, z); for (const a of LANES) { const c = cos(a), s = sin(a), t = x * c + z * s; if (t > 0) d = min(d, abs(-x * s + z * c) - r * .012); } return d; };
+const laneDist = (x, z) => { let d = 1e9; const r = hypot(x, z); for (const a of LANES) { const c = cos(a), s = sin(a), t = x * c + z * s; if (t > 0) d = min(d, abs(-x * s + z * c) - r * .004); } return d; };
 const kRot = (lx, lz) => { const a = KAABA.yaw; return [lx * cos(a) + lz * sin(a), -lx * sin(a) + lz * cos(a)]; };
 
 // viewpoints: x, eye height above the ground (absolute when flying), z, look-at x, y, z (absolute), flying
 const POSES = [
-  [15, 1.7, -17, 0, 4.5, 1, 0],
+  [12, 1.7, -14, 0, 5, 1, 0],
   [SAFA[0] - 5, 1.7, SAFA[1] - 5, 0, 3, 0, 0],
-  [104, 1.7, 76, MARWA[0], 5, MARWA[1], 0],
+  [104, 1.7, 76, MARWA[0], 2, MARWA[1], 0],
   [27, 1.7, 10, 6, 3, 1, 0],
   [58, 1.7, -38, 0, 4, 0, 0],
   [-210, 95, 230, 120, 0, -200, 1],
@@ -220,14 +220,14 @@ const qrot3 = (q, v) => {
 // ---------------------------------------------------------------- the Kaaba, the Hijr wall, Zamzam
 function meshKaaba() {
   const m = new Mesh(), k = KAABA;
-  box(m, -k.hx, -.3, -k.hz, k.hx, k.h, k.hz);
+  box(m, -k.hx, -1.2, -k.hz, k.hx, k.h, k.hz);
   return m;
 }
 // a house: body, parapet, beam ends, door, small high windows, sometimes a roof room or a walled yard; written into
 // the shared world-space meshes by material
 function house(M, x, y, z, yaw, w, d, h, kind, mat, lit, lamps) {
   const ux = cos(yaw), uz = sin(yaw), vx = -uz, vz = ux, body = M[mat], hw = w / 2, hd = d / 2;
-  obox(body, x, z, ux, uz, hw, hd, y - .6, y + h);
+  obox(body, x, z, ux, uz, hw, hd, y - 2, y + h);
   // parapet on four sides
   for (const s of [-1, 1]) {
     obox(body, x + vx * s * (hd - .13), z + vz * s * (hd - .13), ux, uz, hw, .13, y + h, y + h + .55);
@@ -298,7 +298,7 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   const lamps = [];
 
   // --- the Kaaba, its door and water spout, the low wall of the Hijr, the well of Zamzam
-  const M = { 6: new Mesh(), 5: new Mesh(), 7: new Mesh(), wood: new Mesh(), open: new Mesh(), well: new Mesh() };
+  const M = { 6: new Mesh(), 5: new Mesh(), 7: new Mesh(), wood: new Mesh(), open: new Mesh(), well: new Mesh(), dark: new Mesh() };
   const ky = 0;
   solid(13, 0, ky, 0, 1, yawQ(KAABA.yaw), 13, .3, 0, 0);
   {
@@ -312,38 +312,39 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
     // the Hijr: a low curved wall on the north-west side (its line and height are guesses)
     const pts = [];
     for (let i = 0; i <= 18; i++) { const a = -1.32 + i / 18 * 2.64, [px, pz] = kRot(k.hx + .2 + cos(a) * 8.2, sin(a) * 7.6); pts.push([px, ky, pz]); }
-    vwall(M[6], pts, .45, -.3, 1.15);
+    vwall(M[7], pts, .45, -.3, 1.15);
   }
   {
     const [x, z] = ZAMZAM, y = fh(x, z);
     lathe(M.well, [[1.25, -.3], [1.25, .9], [1.1, 1.0], [.85, 1.0], [.85, .35]], 16, x, y, z);
-    const c0 = M.open.v(x, y + .35, z, 0);
-    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, b = (i + 1) / 12 * TAU; M.open.tri(c0, M.open.v(x + cos(b) * .86, y + .35, z + sin(b) * .86, 0), M.open.v(x + cos(a) * .86, y + .35, z + sin(a) * .86, 0)); }
+    const c0 = M.dark.v(x, y + .35, z, 0);
+    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, b = (i + 1) / 12 * TAU; M.dark.tri(c0, M.dark.v(x + cos(b) * .86, y + .35, z + sin(b) * .86, 0), M.dark.v(x + cos(a) * .86, y + .35, z + sin(a) * .86, 0)); }
     obox(M.well, x + 2.3, z + .2, 0, 1, 1.3, .35, y - .6, y + .5);
-    obox(M.open, x + 2.3, z + .2, 0, 1, 1.1, .2, y + .2, y + .51);
+    obox(M.dark, x + 2.3, z + .2, 0, 1, 1.1, .2, y + .2, y + .51);
     obox(M.wood, x - 1.0, z, 1, 0, .06, .06, y + .9, y + 2.6); obox(M.wood, x + 1.0, z, 1, 0, .06, .06, y + .9, y + 2.6);
     obox(M.wood, x, z, 1, 0, 1.15, .07, y + 2.5, y + 2.64);
     lathe(M.wood, [[.02, 2.5], [.14, 2.45], [.14, 2.3], [.02, 2.25]], 10, x, y, z);
-    M.wood.tube([[x + .14, y + 2.37, z], [x + .14, y + 1.3, z]], .012, 4, false, () => 1);
-    lathe(M.wood, [[.0, 0], [.16, .02], [.2, .3], [.21, .32]], 10, x + 1.5, y + .5, z + .25);
+    M.wood.tube([[x + .14, y + 2.37, z], [x + .14, y + 1.32, z]], .012, 4, false, () => 1);
+    lathe(M.wood, [[.0, 0], [.16, .02], [.2, .3], [.21, .32]], 10, x + .14, y + 1.0, z);
   }
 
   // --- houses round the open space, along lanes radiating from it, thinning up the slopes
   rseed(5);
   for (let gz = OZ + 6; gz < -OZ - 6; gz += 10.5) for (let gx = OX + 6; gx < -OX - 6; gx += 10.5) {
     const x = gx + rr(-2.5, 2.5), z = gz + rr(-2.5, 2.5), r = hypot(x, z), t = nearX(NB, x, z, 0) * (1 - sstep(30, 18, hypot(x - SAFA[0], z - SAFA[1])));
-    if (t < .25 || rnd() > t * 1.3 || r < 38 || laneDist(x, z) < 3.2 + r * .01 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
+    if (t < .25 || rnd() > t * 1.3 || r < 50 || laneDist(x, z) < 1.8 + r * .004 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
     const wob = 4 * sin(atan2(z, x) * 5);
     if (abs(r - 64 - wob) < 3 || abs(r - 128 + wob) < 3.5) continue;
     const w = rr(6.5, 11), d = rr(6, 9.5), two = rnd() < (r < 90 ? .45 : .2), h = two ? rr(5.6, 6.4) : rr(3, 3.6);
+    if (laneDist(x, z) < max(w, d) * .6 + 1.4 || abs(r - 64 - wob) < max(w, d) * .6 + 1.5 || abs(r - 128 + wob) < max(w, d) * .6 + 1.8) continue;
     const yaw = atan2(z, x) + PI / 2 + rr(-.08, .08) + (rnd() < .3 ? PI / 2 : 0);
     const ys = [[0, 0], [w / 2, d / 2], [-w / 2, d / 2], [w / 2, -d / 2], [-w / 2, -d / 2]].map(([a, b]) => gy(x + cos(yaw) * a - sin(yaw) * b, z + sin(yaw) * a + cos(yaw) * b));
     if (max(...ys) - min(...ys) > 3.5) continue;
     const mat = rnd() < .55 ? 6 : rnd() < .5 ? 5 : 7, kind = rnd() < .25 ? 1 : rnd() < .2 ? 2 : 0;
-    house(M, x, min(...ys), z, yaw + (rnd() < .5 ? 0 : PI), w, d, h, kind, mat, rnd() < .13, lamps);
+    house(M, x, min(...ys) - .2, z, yaw + (rnd() < .5 ? 0 : PI), w, d, h, kind, mat, rnd() < .13, lamps);
   }
   solid(8, 0, 0, 0, 1, Q0, 6, .1, 0, 0); solid(9, 0, 0, 0, 1, Q0, 5, .2, 0, 0); solid(10, 0, 0, 0, 1, Q0, 7, .3, 0, 0);
-  solid(11, 0, 0, 0, 1, Q0, 9, .4, 0, 0); solid(12, 0, 0, 0, 1, Q0, 14, .5, 0, 0); solid(14, 0, 0, 0, 1, Q0, 12, .6, 0, 0);
+  solid(11, 0, 0, 0, 1, Q0, 9, .4, 0, 0); solid(12, 0, 0, 0, 1, Q0, 14, .5, 0, 0); solid(14, 0, 0, 0, 1, Q0, 12, .6, 0, 0); solid(15, 0, 0, 0, 1, Q0, 11, .7, 0, 0);
 
   // --- granite boulders, rubble and gravel on the slopes and on Safa and Marwa, kept off the open ground
   rseed(12);
@@ -391,7 +392,7 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
     if (gx % 84 === 0 || gz % 96 === 0) continue;
     const x = gx + rr(-1.5, 1.5), z = gz + rr(-1.5, 1.5);
     if (max(abs(x), abs(z)) < -OX + 6) continue;
-    const t = townAt(x, z); if (t < .2 || rnd() > t * .8) continue;
+    const t = townAt(x, z); if (t < .2 || rnd() > t * .5) continue;
     const k = (rnd() * FHOUSE.length) | 0, y = min(fh(x - 5, z - 5), fh(x + 5, z - 5), fh(x - 5, z + 5), fh(x + 5, z + 5)) - .3;
     solid(19 + k, x, y, z, rr(.85, 1.1), yawQ((rnd() < .5 ? 0 : PI / 2) + rr(-.06, .06)), 17, rnd(), litC(x, z), 0);
     if (rnd() < .06) lamps.push(x + rr(-4, 4), y + 1.2, z + rr(-4, 4), rnd());
@@ -400,7 +401,7 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   // --- life: doves wheeling over the open space and the town (not at night)
   rseed(13);
   const birds = [];
-  if (!NIGHT) for (const f of [[0, 26, 0, 24, 12, 1], [60, 30, -60, 40, 7, -1], [-50, 28, 70, 35, 6, 1]]) {
+  if (!NIGHT) for (const f of [[80, 70, -90, 70, 6, -1], [-90, 60, 100, 60, 5, 1]]) {
     const ss_ = rnd();
     for (let i = 0; i < f[4]; i++) birds.push(f[0], f[1], f[2], f[3], ss_ + rnd() * .2, f[5] * rr(.9, 1.1) * 7 / f[3], rr(1.8, 2.3), rnd());
   }

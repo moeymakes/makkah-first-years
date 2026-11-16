@@ -233,7 +233,7 @@ D = Wd.gy = T.smp = null;
 // mesh ids (world.js solid() calls use the same numbers)
 const M = Wd.M;
 const meshes = [meshRock(1, 2, 0), meshRock(7, 2, 0), meshRock(13, 3, 0), meshRock(22, 1, 0), meshRock(31, 1, 0), meshRock(40, 1, 1), meshRock(47, 2, 1), meshRock(55, 0, 0),
-  M[6], M[5], M[7], M.wood, M.open, meshKaaba(), M.well, meshBird(), ...Wd.acacias,
+  M[6], M[5], M[7], M.wood, M.open, meshKaaba(), M.well, M.dark, ...Wd.acacias,
   ...FHOUSE.map((d) => meshFarHouse(...d)), meshBird()].map((m) => m.build());
 let nV = 0, nI = 0;
 for (const m of meshes) { m.v0 = nV; m.i0 = nI; nV += m.nv; nI += m.ib.length; }

@@ -153,7 +153,7 @@ fn jabal(q: vec2f) -> f32 {
   h += 13. * pow(max(1. - ds / 34., 0.), 1.05) + 14. * pow(max(1. - dm / 32., 0.), 1.05);
   // granite block piles on the slopes (only where the grid is fine enough to hold them)
   let rise = h - flo;
-  let rkm = max(ss(4., 25., rise), max(ss(30., 12., ds), ss(26., 10., dm))) * ss(8., 3., u.o.z);
+  let rkm = max(ss(4., 25., rise) * ss(700., 350., rk), max(ss(30., 12., ds), ss(26., 10., dm))) * ss(8., 3., u.o.z);
   let wq = vec3f(x * .085, 0., z * .085) + vec3f(fbm(vec3f(p * .02, 1.), 2), 0., fbm(vec3f(p * .02, 6.), 2)) * 1.2;
   h += rkm * ((.5 - wor(wq)) * 4.5 + (fbm(vec3f(p * .3, 8.), 2) - .5) * 1.2);
   // the open ground: a level space round the Kaaba and the way between Safa and Marwa
@@ -366,6 +366,7 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n
   return o;
 }
 struct TP { h: f32, c: f32, n: vec3f };
+fn fbmT(u: f32, v: f32) -> f32 { return textureSampleLevel(tD, sR, vec2f(u * .05, v * .02), 2.).b; }
 fn tri(p: vec3f, n: vec3f, s: f32) -> TP {
   var w = pow(abs(n), vec3f(4.)); w /= (w.x + w.y + w.z);
   let x = textureSample(tD, sR, p.zy * s); let y = textureSample(tD, sR, p.xz * s); let z = textureSample(tD, sR, p.xy * s);
@@ -416,10 +417,10 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     // granite slopes, the sandy valley floor, trodden earth between the houses, pale sand on the open ground
     let rock = mix(fm.r, nm.g, nk); let sand = mix(fm.g, nm.r, nk); let town = mix(fm.b, nm.a, nk); let open = mix(fm.a, nm.b, nk);
     alb = granite(A, B, C, Lg, flt, 0.) * select(1., mix(.78, 1., ss(3000., 9000., dist)), far);
-    let earth = mix(vec3f(.34, .26, .19), vec3f(.44, .35, .25), ss(.35, .7, Lg.a + .2 * B.c)) * (.85 + .25 * B.h) * (.9 + .15 * C.c);
+    let earth = mix(vec3f(.40, .31, .22), vec3f(.48, .38, .27), ss(.35, .7, Lg.a + .2 * B.c)) * (.85 + .25 * B.h) * (.9 + .15 * C.c);
     alb = mix(alb, earth, 1. - rock);
     alb = mix(alb, vec3f(.50, .40, .28) * (.88 + .2 * B.h), sand * (1. - rock) * .5 * select(1., .5, far && dist > 1500.));
-    alb = mix(alb, vec3f(.30, .24, .18) * (.85 + .25 * C.h), town * (1. - rock) * .55);
+    alb = mix(alb, vec3f(.40, .31, .22) * (.85 + .25 * C.h), town * (1. - rock) * .5);
     alb = mix(alb, vec3f(.55, .46, .34) * (.9 + .16 * B.h) * (.94 + .1 * C.c), open * .85);
     alb *= mix(1., .6 + .8 * F.h, fk);
     bump = select(1.3, mix(.6, .3, ss(800., 4000., dist)), far) * mix(1., .1, (1. - rock)); gloss = .04;
@@ -430,7 +431,7 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
     alb = mix(vec3f(.26, .21, .17), vec3f(.18, .15, .12), hs(sd * 91.)) * (.75 + .4 * B.h); bump = .6; gloss = .06;
   } else if (mat == 5 || mat == 7) {
     // sun-dried mud brick in courses (5), or under a worn mud render (7); darker and eroded at the foot
-    let row = floor(fv / .34); let bxi = floor(fu / .7 + row * .5); let bx = fract(fu / .7 + row * .5); let by = fract(fv / .34);
+    let row = floor(fv / .34); let off = row * .5 + hs(row * 2.3) * .4; let bw = .62 + .16 * hs(row * 5.1); let bxi = floor(fu / bw + off); let bx = fract(fu / bw + off); let by = fract(fv / .34);
     let mortar = (1. - ss(.0, .1, by) * ss(1., .9, by)) * .6 + (1. - ss(.0, .07, bx) * ss(1., .93, bx)) * .5;
     let tone = hs(sd * 13.);
     var br = mix(vec3f(.46, .33, .21), vec3f(.38, .27, .17), hs(row * 7.1 + bxi) * .7) * (.82 + .3 * C.h) * mix(.9, 1.08, tone);
@@ -443,14 +444,16 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
   } else if (mat == 6 || mat == 12) {
     // dry-laid or mud-set walls of rough granite blocks (6), the paler dressed stone of the well (12)
     let srow = floor(fv / (.26 + .12 * hs(floor(fu / 2.3)))); let sx = fu / (.35 + .5 * hs(srow * 3.7)) + hs(srow) * 7.;
-    let stn = select(mix(vec3f(.17, .14, .12), vec3f(.33, .27, .22), hs(floor(sx) * 1.3 + srow * 17.)), mix(vec3f(.27, .24, .20), vec3f(.36, .31, .26), hs(floor(sx) * 1.3 + srow * 17.)), mat == 12) * (.75 + .45 * F.h) * (.85 + .3 * C.h);
+    let sv = .8 + .4 * hs(floor(sx) * 3.3 + srow * 1.9);
+    let stn0 = select(mix(vec3f(.17, .14, .12), vec3f(.33, .27, .22), hs(floor(sx) * 1.3 + srow * 17.)), mix(vec3f(.27, .24, .20), vec3f(.36, .31, .26), hs(floor(sx) * 1.3 + srow * 17.)), mat == 12) * (.75 + .45 * F.h) * (.85 + .3 * C.h);
+    let stn = stn0 * sv * (.8 + .4 * B.h);
     let sj = (1. - ss(.0, .1, fract(sx)) * ss(1., .9, fract(sx))) + (1. - ss(.0, .14, fract(fv / .32)) * ss(1., .86, fract(fv / .32)));
     alb = mix(stn, select(vec3f(.26, .21, .16), vec3f(.30, .26, .21), mat == 12), sat(sj) * .6 * wfade);
     alb = mix(alb, vec3f(.40, .32, .24) * (.85 + .25 * B.h), ss(.6, .9, on.y) * select(.7, .2, mat == 12));
     bump = .4;
   } else if (mat == 9) {
     // timber: doors, lintels, beam ends, the well frame
-    alb = mix(vec3f(.22, .15, .09), vec3f(.30, .21, .13), hs(sd * 5.)) * (.75 + .35 * C.h) * (.85 + .3 * ss(.3, .7, fract(fv * 6. + fu * .3))); gloss = .1; bump = .3;
+    alb = mix(vec3f(.15, .10, .06), vec3f(.21, .14, .085), hs(sd * 5.)) * (.75 + .35 * C.h) * (.85 + .3 * ss(.3, .7, fract(fv * 6. + fu * .3))); gloss = .1; bump = .3;
   } else if (mat == 14) {
     // a doorway or window: dark by day, a warm lamp or fire glow inside at night
     alb = vec3f(.02, .015, .01);
@@ -459,9 +462,9 @@ fn granite(A: TP, B: TP, C: TP, Lg: vec4f, flt: f32, k: f32) -> vec3f {
   } else if (mat == 13) {
     // the Kaaba: plain dark cloth hanging in soft folds over a base course of stone
     let base = 1. - ss(.62, .7, fv);
-    let fold = .82 + .18 * sin(fu * 5.3 + sin(fu * 1.7) * 1.5 + fv * .3) * wfade;
-    let hem = ss(.7, .78, fv) * ss(1.05, .95, fv);
-    let cloth = vec3f(.03, .027, .028) * fold * (.9 + .2 * B.h) * (1. - .35 * hem);
+    let fold = .9 + .1 * sin(fu * 2.1 + 3. * fbmT(fu, fv) + sin(fu * .7) * 2.) * wfade;
+    let hem = ss(.68, .74, fv) * ss(1.08, 1., fv);
+    let cloth = vec3f(.026, .024, .025) * fold * (.94 + .12 * B.h) * (1. + .6 * hem);
     let srow = floor(fv / .3); let sx = fu / .55 + hs(srow) * 5.;
     let stn = mix(vec3f(.24, .21, .18), vec3f(.34, .30, .25), hs(floor(sx) + srow * 7.)) * (.8 + .3 * C.h);
     alb = mix(cloth, stn, base);
