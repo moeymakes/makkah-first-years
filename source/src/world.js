@@ -21,11 +21,11 @@ const kRot = (lx, lz) => { const a = KAABA.yaw; return [lx * cos(a) + lz * sin(a
 // viewpoints: x, eye height above the ground (absolute when flying), z, look-at x, y, z (absolute), flying
 const POSES = [
   [12, 1.7, -14, 0, 5, 1, 0],
-  [SAFA[0] - 5, 1.7, SAFA[1] - 5, 0, 3, 0, 0],
-  [104, 1.7, 76, MARWA[0], 2, MARWA[1], 0],
+  [SAFA[0] - 5, 4.5, SAFA[1] - 5, 0, 3, 0, 0],
+  [100, 1.7, 84, MARWA[0], 8, MARWA[1], 0],
   [27, 1.7, 10, 6, 3, 1, 0],
-  [58, 1.7, -38, 0, 4, 0, 0],
-  [-210, 95, 230, 120, 0, -200, 1],
+  [58, 1.7, -38, 0, 5.5, 0, 0],
+  [-150, 110, 260, 120, 0, -200, 1],
 ];
 // 60 s scripted camera path (position + look-at, absolute heights)
 const FLY = new Float32Array([
@@ -42,7 +42,7 @@ const FLY = new Float32Array([
   130, 30, -200, 0, 4, 0,
   40, 50, -200, 0, 4, 0,
   -110, 70, -110, 0, 4, 0,
-  -210, 95, 230, 120, 0, -200,
+  -150, 110, 260, 120, 0, -200,
 ]);
 // ---------------------------------------------------------------- ground samplers: near 1 m, middle 2 m, far ~23 m
 const FN = 1024, FC = 24000 / (FN - 1), FO = -12000, MN = 1024, MC = 2, MO = -1024;
@@ -332,11 +332,10 @@ function makeWorld(D, T, NEAR, MID, FAR, flyPts, fh) {
   rseed(5);
   for (let gz = OZ + 6; gz < -OZ - 6; gz += 10.5) for (let gx = OX + 6; gx < -OX - 6; gx += 10.5) {
     const x = gx + rr(-2.5, 2.5), z = gz + rr(-2.5, 2.5), r = hypot(x, z), t = nearX(NB, x, z, 0) * (1 - sstep(30, 18, hypot(x - SAFA[0], z - SAFA[1])));
-    if (t < .25 || rnd() > t * 1.3 || r < 50 || laneDist(x, z) < 1.8 + r * .004 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
+    if (t < .25 || rnd() > t * 1.3 || r < 44 || laneDist(x, z) < 1.8 + r * .004 || nearPose(x, z, 7) || nearFly(x, gy(x, z) + 3, z, 7)) continue;
     const wob = 4 * sin(atan2(z, x) * 5);
-    if (abs(r - 64 - wob) < 3 || abs(r - 128 + wob) < 3.5) continue;
     const w = rr(6.5, 11), d = rr(6, 9.5), two = rnd() < (r < 90 ? .45 : .2), h = two ? rr(5.6, 6.4) : rr(3, 3.6);
-    if (laneDist(x, z) < max(w, d) * .6 + 1.4 || abs(r - 64 - wob) < max(w, d) * .6 + 1.5 || abs(r - 128 + wob) < max(w, d) * .6 + 1.8) continue;
+    if (laneDist(x, z) < max(w, d) * .6 + 1.2) continue;
     const yaw = atan2(z, x) + PI / 2 + rr(-.08, .08) + (rnd() < .3 ? PI / 2 : 0);
     const ys = [[0, 0], [w / 2, d / 2], [-w / 2, d / 2], [w / 2, -d / 2], [-w / 2, -d / 2]].map(([a, b]) => gy(x + cos(yaw) * a - sin(yaw) * b, z + sin(yaw) * a + cos(yaw) * b));
     if (max(...ys) - min(...ys) > 3.5) continue;
